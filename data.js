@@ -1,5 +1,6 @@
-const fs = require("node:fs")
-const path = require("node:path")
+const fs = require("fs/promises")
+const path = require("path")
+
 const joylashuv = path.resolve("databaseFolder", "data.json")
 
 class Fruit {
@@ -13,132 +14,107 @@ class Fruit {
     }
 }
 
-
 class DatabaseAction {
-    constructor(lokation, Fruit, fs) {
+    constructor(lokation, Fruit) {
         this.lokation = lokation
         this.Fruit = Fruit
-        this.fs = fs
     }
-//-----------------------------------------------------------------------------------------------------------------------------//
+
     async createFruits() {
         try {
-            let data = [];
+            let data = []
             try {
-                const fileData = await fs.readFile(this.lokation, { encoding: "utf8" })
-                data = JSON.parse(fileData);
+                const fileData = await fs.readFile(this.lokation, "utf8")
+                data = JSON.parse(fileData)
             } catch (error) {
-                console.log("file mavjud emas ekan yangi fayl yaratildi : ", error)
+                console.log("Fayl mavjud emas, yangi fayl yaratiladi.")
             }
-            data.push(this.Fruit);
-            
-            await fs.writeFile(this.lokation, JSON.stringify(data, null, 2), { encoding: "utf8" })
-            console.log("malumot bazaga qoshildi : ", this.Fruit)
+            data.push(this.Fruit.info())
+            await fs.writeFile(this.lokation, JSON.stringify(data, null, 2), "utf8")
+            console.log("Malumot bazaga qo'shildi : ", this.Fruit.info())
         } catch (error) {
-            console.log("tizimda xatolik : ", error)
+            console.error("Xato:", error)
         }
     }
-    
 
-
-    //---------------------------------------------------------------------------------------------------------------------------//
     async addFruit(name, newCount) {
         try {
-            const fileData = await fs.readFile(this.lokation, { encoding: "utf8" })
+            const fileData = await fs.readFile(this.lokation, "utf8")
             let data = JSON.parse(fileData);
 
-            const fruit = data.find((item) => item.name === name);
+            const fruit = data.find((item) => item.name === name)
             if (fruit) {
                 fruit.count = newCount;
-                console.log(`name : "${name}"  \ncount : ${newCount} ga yangilandi`)
+                console.log(`"${name}" ning counti ${newCount} ga yangilandi`)
             } else {
-                console.log(`"${name}" bunday meva topilmadi`)
+                console.log(`"${name}" meva topilmadi`)
                 return;
             }
-
-            await fs.writeFile(this.lokation, JSON.stringify(data, null, 2), { encoding: "utf8" })
-            console.log("databaza yangilandi")
+            await fs.writeFile(this.lokation, JSON.stringify(data, null, 2), "utf8")
+            console.log("Malumotlar bazasi yangilandi")
         } catch (err) {
-            console.error("error : ", err)
+            console.error("Xato:", err)
         }
     }
-    
 
-
-
-    //---------------------------------------------------------------------------------------------------------------------------//
     async soldFruit(soldName, soldCount) {
         try {
-            const fileData = await fs.readFile(this.lokation, { encoding: "utf8" })
-            let data = JSON.parse(fileData);
-            
-            const fruit = data.find((el) => el.name === soldName);
+            const fileData = await fs.readFile(this.lokation, "utf8")
+            let data = JSON.parse(fileData)
+
+            const fruit = data.find((el) => el.name === soldName)
             if (fruit) {
                 if (fruit.count >= soldCount) {
-                    fruit.count -= soldCount;
-                    console.log("haridingiz uchun raxmat")
-                    await fs.writeFile(this.lokation, JSON.stringify(data, null, 2), { encoding: "utf8" })
-                    console.log("databaza yangilandi");
+                    fruit.count -= soldCount
+                    console.log("Haridingiz uchun rahmat!")
+                    await fs.writeFile(this.lokation, JSON.stringify(data, null, 2), "utf8")
+                    console.log("Malumotlar bazasi yangilandi")
                 } else {
-                    console.log("bizda buncha meva mavjud emas")
+                    console.log("Bizda buncha meva mavjud emas")
                 }
             } else {
                 console.log(`"${soldName}" bunday meva topilmadi`)
                 return;
             }
         } catch (err) {
-            console.error("error : ", err);
+            console.error("Xato:", err)
         }
     }
-    
 
-
-
-
-    //-------------------------------------------------------------------------------------------------------------------------------//
-    getFruits() {
-        const readStream = fs.createReadStream(this.lokation, { highWaterMark: 1024 });
-        let i = 1;
-        readStream.on("data", (chunk) => {
-            console.log("-------------------------------- ", i, "kb", "  -------------------------------------");
-            console.log(chunk.toString());
-            i++;
-        });
-        readStream.on("end", () => {
-            console.log("barcha malumotlar stream formatda")
-        });
+    async getFruits() {
+        try {
+            const fileData = await fs.readFile(this.lokation, "utf8")
+            console.log("Barcha malumotlar:\n", fileData)
+        } catch (error) {
+            console.error("Xato:", error)
+        }
     }
-    
 
-
-
-
-    //----------------------------------------------------------------------------------------------------------------------------------//
     async deleteFruit(nameFruit) {
         try {
-            const fileData = await fs.promises.readFile(this.lokation, { encoding: "utf8" });
-            let data = JSON.parse(fileData);
+            const fileData = await fs.readFile(this.lokation, "utf8")
+            let data = JSON.parse(fileData)
 
-            const initialLength = data.length;
-            data = data.filter((fruit) => fruit.name !== nameFruit);
+            const initialLength = data.length
+            data = data.filter((fruit) => fruit.name !== nameFruit)
 
             if (data.length < initialLength) {
-                await fs.promises.writeFile(this.lokation, JSON.stringify(data, null, 2), { encoding: "utf8" });
-                console.log(`"${nameFruit}" nomli meva o'chirildi`);
+                await fs.writeFile(this.lokation, JSON.stringify(data, null, 2), "utf8")
+                console.log(`"${nameFruit}" meva o'chirildi.`)
             } else {
-                console.log(`"${nameFruit}" nomli meva topilmadi`);
+                console.log(`"${nameFruit}" meva topilmadi.`)
             }
         } catch (err) {
-            console.error("Xatolik:", err);
+            console.error("Xato:", err)
         }
     }
 }
 
-const fruitData = new Fruit("olma", 12, 200)
-const database = new DatabaseAction(joylashuv, fruitData, fs)
+const fruitData = new Fruit("Olma", 12, 200)
+const database = new DatabaseAction(joylashuv, fruitData)
 
 // database.createFruits()
-// database.addFruit("olma", 10)
-// database.soldFruit("banana", 1)
+// database.addFruit("Olma", 20)
+// database.soldFruit("Olma", 5)
 // database.getFruits()
-// database.deleteFruit("banana")
+// database.deleteFruit("Olma")
